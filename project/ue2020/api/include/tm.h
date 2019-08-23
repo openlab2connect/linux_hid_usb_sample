@@ -81,3 +81,4 @@ int TM_Close(libusb_device_handle *);
 int TM_SetLCDBrightnessLevel(int);
 int TM_GetLCDBrightnessLevel(int *);
 int TM_EnableCallbackTouchPoint(_CALLBACKFUNC);
+int TM_DisableCallbackTouchPoint(void);
