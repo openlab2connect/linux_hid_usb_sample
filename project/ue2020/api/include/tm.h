@@ -76,9 +76,23 @@ typedef struct {
 
 } RESPBUFFER;
 
+
+void buffer_hex_dump(unsigned char*, int);
+int usb_sync_transfer_set(unsigned char *, unsigned char *, int, int);
+int usb_sync_transfer_get(unsigned char *, unsigned char *, int, int);
+
 HANDLE TM_Open(int *);
 int TM_Close(libusb_device_handle *);
 int TM_SetLCDBrightnessLevel(int);
 int TM_GetLCDBrightnessLevel(int *);
 int TM_EnableCallbackTouchPoint(_CALLBACKFUNC);
 int TM_DisableCallbackTouchPoint(void);
+int TM_SetBioLed (int );
+int TM_GetBioLed (int *);
+int TM_SetSpeakerOnOff (int);
+int TM_SetSpeakerVolume (int);
+int TM_SetSpeakerFreq (int);
+int TM_GetSpeakerStatus (int *, int *, int *);
+int TM_EnterPowerSavingMode (void);
+int TM_ExitPowerSavingMode (void);
+

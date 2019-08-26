@@ -31,11 +31,11 @@ For more information, please refer to <http://unlicense.org>
 #include <pthread.h>
 #include <tm.h>
 
-static HANDLE g_hd;
+HANDLE g_hd;
 static int g_completed = 0;
 pthread_mutex_t lock;
 
-static void buffer_hex_dump(unsigned char* buf, int size) {
+void buffer_hex_dump(unsigned char* buf, int size) {
 	int i;
 	for (i = 0; i<size; i++)
 		fprintf(stderr, "%s: buf[%d] 0x%x\n", __func__, i, buf[i]);
@@ -148,131 +148,6 @@ int TM_EnableCallbackTouchPoint(_CALLBACKFUNC lpPSFunc)
 	if (rc == -6)
 		return TM_INVALID_STATE;
 	return TM_SUCCESS;
-}
-
-int TM_GetLCDBrightnessLevel(int *level)
-{
-	int actual_length = 0;
-	int rc = TM_SUCCESS;
-	HANDLE hd = g_hd;
-	CMDBUFFER *cbuf = (CMDBUFFER *)malloc(sizeof(CMDBUFFER));
-	RESPBUFFER *rbuf = (RESPBUFFER *)malloc(sizeof(RESPBUFFER));
-	uint16_t retcode;
-
-	if (hd == NULL)
-		return TM_DEVICE_NO_OPEN;
-	if (cbuf == NULL || rbuf == NULL)
-		return TM_FAIL;
-
-	rc = libusb_claim_interface(hd, 0);
-	if (rc < 0) {
-		fprintf(stderr, "%s:interface claim error %d\n", __func__, rc);
-		rc = TM_ERROR_IO;
-		goto leave_get_brightness;
-	}
-
-	cbuf->cmd[0] = 'C';
-    cbuf->cmd[1] = '6';
-    cbuf->cmd[2] = '4';
-
-    //EP OUT
-	rc = libusb_bulk_transfer(hd, 
-		ENPPOINT_OUT, cbuf->cmd, sizeof(CMDBUFFER)-1, &actual_length, 0);
-
-	if (rc == 0 && actual_length == sizeof(CMDBUFFER)-1) {
-		fprintf(stderr, "%s:data transfer success\n", __func__);
-	}
-	else {
-		fprintf(stderr, "%s:data transfer error %d\n", __func__, rc);
-		rc = TM_FAIL;
-		goto leave_get_brightness;
-	}
-
-	//EP IN
-	rc = libusb_bulk_transfer(hd, 
-		ENPPOINT_IN, rbuf->resp, sizeof(RESPBUFFER), &actual_length, 0);
-
-	if (rc == 0 && actual_length == sizeof(RESPBUFFER)) {
-		retcode = (rbuf->resp[4]<<4)|rbuf->resp[3];
-		*level = rbuf->resp[5];
-		fprintf(stderr, "%s:data response success ret %d level %d\n", __func__, retcode, *level);
-		buffer_hex_dump(rbuf->resp, RESP_FORMAT_6);
-	} else {
-		fprintf(stderr, "%s:data response error %d", __func__, rc);
-		rc = TM_FAIL;
-	}
-
-leave_get_brightness:
-	libusb_release_interface(hd, 0);
-	free(cbuf);
-	free(rbuf);
-
-	return rc;
-}
-
-int TM_SetLCDBrightnessLevel(int level)
-{
-	int actual_length = 0;
-	int rc = TM_SUCCESS;
-	HANDLE hd = g_hd;
-	CMDBUFFER *cbuf = (CMDBUFFER *)malloc(sizeof(CMDBUFFER));
-	RESPBUFFER *rbuf = (RESPBUFFER *)malloc(sizeof(RESPBUFFER));
-	uint16_t retcode;
-
-	if (hd == NULL)
-		return TM_DEVICE_NO_OPEN;
-	if (cbuf == NULL || rbuf == NULL)
-		return TM_FAIL;
-	// brightness maximum value
-	if (level > 100) {
-		free (cbuf);
-		free (rbuf);
-		return TM_INVALID_PARAMETER;
-	}
-
-	rc = libusb_claim_interface(hd, 0);
-	if (rc < 0) {
-		fprintf(stderr, "%s:interface claim error %d\n", __func__, rc);
-		rc = TM_ERROR_IO;
-		goto leave_set_brightness;
-	}
-
-	cbuf->cmd[0] = 'C';
-    cbuf->cmd[1] = '6';
-    cbuf->cmd[2] = '3';
-    cbuf->cmd[3] = (unsigned char)level;
-
-    //EP OUT
-	rc = libusb_bulk_transfer(hd, 
-		ENPPOINT_OUT, cbuf->cmd, sizeof(CMDBUFFER), &actual_length, 0);
-
-	if (rc == 0 && actual_length == sizeof(CMDBUFFER)) {
-		fprintf(stderr, "%s:data transfer success\n", __func__);
-	}
-	else {
-		fprintf(stderr, "%s:data transfer error %d\n", __func__, rc);
-		rc = TM_FAIL;
-		goto leave_set_brightness;
-	}
-
-	//EP IN
-	rc = libusb_bulk_transfer(hd, 
-		ENPPOINT_IN, rbuf->resp, sizeof(RESPBUFFER), &actual_length, 0);
-
-	if (rc == 0 && actual_length == sizeof(RESPBUFFER)) {
-		retcode = (rbuf->resp[4]<<4)|rbuf->resp[3];
-		fprintf(stderr, "%s:data response success ret %d\n", __func__, retcode);
-		buffer_hex_dump(rbuf->resp, RESP_FORMAT_5);
-	} else {
-		fprintf(stderr, "%s:data response error %d", __func__, rc);
-		rc = TM_FAIL;
-	}
-
-leave_set_brightness:
-	libusb_release_interface(hd, 0);
-	free(cbuf);
-	free(rbuf);
-	return rc;
 }
 
 int TM_Close(HANDLE hd)
