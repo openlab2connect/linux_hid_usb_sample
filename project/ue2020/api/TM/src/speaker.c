@@ -55,7 +55,7 @@ int TM_GetSpeakerStatus (int *iStatus, int *iVolume, int *iFreq)
 
 	*iStatus = (int)rbuf->resp[5];
 	*iVolume = (int)rbuf->resp[6];
-	*iFreq = (int)((rbuf->resp[8] << 4)|rbuf->resp[7]);
+	*iFreq = (int)((rbuf->resp[8] << 8)|rbuf->resp[7]);
 
 	libusb_release_interface(hd, 0);
 	free(cbuf);
