@@ -44,13 +44,9 @@ int main(void)
 		return 1;
 	}
 
-	TM_SetLCDBrightnessLevel(50);
-	TM_GetLCDBrightnessLevel(&level);
-	fprintf(stderr, "get brightness level %d\n", level);
-
-	TM_SetLCDBrightnessLevel(100);
-	TM_GetLCDBrightnessLevel(&level);
-	fprintf(stderr, "get brightness level %d\n", level);
+	TM_EnterPowerSavingMode();
+	sleep(2);
+	TM_ExitPowerSavingMode();
 
 exit:
 	TM_Close(handle);

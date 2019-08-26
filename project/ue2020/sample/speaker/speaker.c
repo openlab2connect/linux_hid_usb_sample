@@ -34,7 +34,7 @@ int main(void)
 {
 	int rc;
 	HANDLE handle;
-	int level;
+	int status, vol, freq;
 	int error;
 
 	handle = TM_Open(&error);
@@ -44,13 +44,20 @@ int main(void)
 		return 1;
 	}
 
-	TM_SetLCDBrightnessLevel(50);
-	TM_GetLCDBrightnessLevel(&level);
-	fprintf(stderr, "get brightness level %d\n", level);
+	TM_SetSpeakerOnOff(0);
+	sleep(2);
 
-	TM_SetLCDBrightnessLevel(100);
-	TM_GetLCDBrightnessLevel(&level);
-	fprintf(stderr, "get brightness level %d\n", level);
+	TM_SetSpeakerVolume(50);
+	sleep(2);
+
+	TM_SetSpeakerFreq(500);
+	TM_SetSpeakerOnOff(1);
+	sleep(2);
+
+	TM_GetSpeakerStatus(&status, &vol, &freq);
+	fprintf(stderr, "status %d vol %d freq %d\n", status, vol, freq);
+
+	TM_SetSpeakerOnOff(0);
 
 exit:
 	TM_Close(handle);

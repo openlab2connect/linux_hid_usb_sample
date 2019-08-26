@@ -34,7 +34,7 @@ int main(void)
 {
 	int rc;
 	HANDLE handle;
-	int level;
+	int data;
 	int error;
 
 	handle = TM_Open(&error);
@@ -44,13 +44,15 @@ int main(void)
 		return 1;
 	}
 
-	TM_SetLCDBrightnessLevel(50);
-	TM_GetLCDBrightnessLevel(&level);
-	fprintf(stderr, "get brightness level %d\n", level);
+	TM_SetBioLed(1);
+	TM_GetBioLed(&data);
+	fprintf(stderr, "get data %d\n", data);
 
-	TM_SetLCDBrightnessLevel(100);
-	TM_GetLCDBrightnessLevel(&level);
-	fprintf(stderr, "get brightness level %d\n", level);
+	sleep(2);
+
+	TM_SetBioLed(2);
+	TM_GetBioLed(&data);
+	fprintf(stderr, "get data %d\n", data);
 
 exit:
 	TM_Close(handle);
