@@ -153,25 +153,22 @@ int TM_EnableCallbackTouchPoint(_CALLBACKFUNC lpPSFunc)
 int TM_GetLCDBrightnessLevel(int *level)
 {
 	int actual_length = 0;
-	int rc;
+	int rc = TM_SUCCESS;
 	HANDLE hd = g_hd;
 	CMDBUFFER *cbuf = (CMDBUFFER *)malloc(sizeof(CMDBUFFER));
 	RESPBUFFER *rbuf = (RESPBUFFER *)malloc(sizeof(RESPBUFFER));
 	uint16_t retcode;
-	// int i;
 
 	if (hd == NULL)
 		return TM_DEVICE_NO_OPEN;
 	if (cbuf == NULL || rbuf == NULL)
-		return TM_INVALID_PARAMETER;
-	// brightness maximum value
-    if (*level > 100)
-    	return TM_INVALID_PARAMETER;
+		return TM_FAIL;
 
 	rc = libusb_claim_interface(hd, 0);
 	if (rc < 0) {
 		fprintf(stderr, "%s:interface claim error %d\n", __func__, rc);
-		return TM_ERROR_IO;
+		rc = TM_ERROR_IO;
+		goto leave_get_brightness;
 	}
 
 	cbuf->cmd[0] = 'C';
@@ -187,58 +184,57 @@ int TM_GetLCDBrightnessLevel(int *level)
 	}
 	else {
 		fprintf(stderr, "%s:data transfer error %d\n", __func__, rc);
-		free(cbuf);
-		return TM_FAIL;
+		rc = TM_FAIL;
+		goto leave_get_brightness;
 	}
 
 	//EP IN
 	rc = libusb_bulk_transfer(hd, 
 		ENPPOINT_IN, rbuf->resp, sizeof(RESPBUFFER), &actual_length, 0);
 
-    if (rc == 0 && actual_length == sizeof(RESPBUFFER)) {
-    	buffer_hex_dump(rbuf->resp, RESP_FORMAT_6);
-    	// for (i=0; i<RESP_FORMAT_6; i++)
-    	// 	fprintf(stderr, "%s:HEX 0x%x\n", __func__, rbuf->resp[i]);
-    	// little endian
-    	retcode = (rbuf->resp[4]<<4)|rbuf->resp[3];
-    	*level = rbuf->resp[5];
-    	fprintf(stderr, "%s:data transfer success ret %d level %d\n", __func__, retcode, *level);
-    } else {
-    	fprintf(stderr, "%s:data transfer error %d", __func__, rc);
-    	free(rbuf);
-    	return TM_FAIL;
-    }
+	if (rc == 0 && actual_length == sizeof(RESPBUFFER)) {
+		retcode = (rbuf->resp[4]<<4)|rbuf->resp[3];
+		*level = rbuf->resp[5];
+		fprintf(stderr, "%s:data response success ret %d level %d\n", __func__, retcode, *level);
+		buffer_hex_dump(rbuf->resp, RESP_FORMAT_6);
+	} else {
+		fprintf(stderr, "%s:data response error %d", __func__, rc);
+		rc = TM_FAIL;
+	}
 
-    free(cbuf);
+leave_get_brightness:
+	libusb_release_interface(hd, 0);
+	free(cbuf);
 	free(rbuf);
 
-	libusb_release_interface(hd, 0);
-
-	return TM_SUCCESS;
+	return rc;
 }
 
 int TM_SetLCDBrightnessLevel(int level)
 {
 	int actual_length = 0;
-	int rc;
+	int rc = TM_SUCCESS;
 	HANDLE hd = g_hd;
 	CMDBUFFER *cbuf = (CMDBUFFER *)malloc(sizeof(CMDBUFFER));
 	RESPBUFFER *rbuf = (RESPBUFFER *)malloc(sizeof(RESPBUFFER));
 	uint16_t retcode;
-	// int i;
 
 	if (hd == NULL)
 		return TM_DEVICE_NO_OPEN;
 	if (cbuf == NULL || rbuf == NULL)
-		return TM_INVALID_PARAMETER;
+		return TM_FAIL;
 	// brightness maximum value
-    if (level > 100)
-    	return TM_INVALID_PARAMETER;
+	if (level > 100) {
+		free (cbuf);
+		free (rbuf);
+		return TM_INVALID_PARAMETER;
+	}
 
 	rc = libusb_claim_interface(hd, 0);
 	if (rc < 0) {
 		fprintf(stderr, "%s:interface claim error %d\n", __func__, rc);
-		return TM_ERROR_IO;
+		rc = TM_ERROR_IO;
+		goto leave_set_brightness;
 	}
 
 	cbuf->cmd[0] = 'C';
@@ -255,32 +251,28 @@ int TM_SetLCDBrightnessLevel(int level)
 	}
 	else {
 		fprintf(stderr, "%s:data transfer error %d\n", __func__, rc);
-		free(cbuf);
-		return TM_FAIL;
+		rc = TM_FAIL;
+		goto leave_set_brightness;
 	}
 
 	//EP IN
 	rc = libusb_bulk_transfer(hd, 
 		ENPPOINT_IN, rbuf->resp, sizeof(RESPBUFFER), &actual_length, 0);
 
-    if (rc == 0 && actual_length == sizeof(RESPBUFFER)) {
-    	buffer_hex_dump(rbuf->resp, RESP_FORMAT_5);
-    	// for (i=0; i<RESP_FORMAT_5; i++)
-    	// 	fprintf(stderr, "%s:HEX 0x%x\n", __func__, rbuf->resp[i]);
-    	// little endian
-    	retcode = (rbuf->resp[4]<<4)|rbuf->resp[3];
-    	fprintf(stderr, "%s:data transfer success ret %d\n", __func__, retcode);
-    } else {
-    	fprintf(stderr, "%s:data transfer error %d", __func__, rc);
-    	free(rbuf);
-    	return TM_FAIL;
-    }
+	if (rc == 0 && actual_length == sizeof(RESPBUFFER)) {
+		retcode = (rbuf->resp[4]<<4)|rbuf->resp[3];
+		fprintf(stderr, "%s:data response success ret %d\n", __func__, retcode);
+		buffer_hex_dump(rbuf->resp, RESP_FORMAT_5);
+	} else {
+		fprintf(stderr, "%s:data response error %d", __func__, rc);
+		rc = TM_FAIL;
+	}
 
-    free(cbuf);
-	free(rbuf);
+leave_set_brightness:
 	libusb_release_interface(hd, 0);
-
-	return TM_SUCCESS;
+	free(cbuf);
+	free(rbuf);
+	return rc;
 }
 
 int TM_Close(HANDLE hd)
