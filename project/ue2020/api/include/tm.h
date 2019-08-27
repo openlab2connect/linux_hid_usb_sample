@@ -56,6 +56,27 @@ enum tm_error {
 typedef int (*_CALLBACKFUNC)(int *, unsigned int *, unsigned int *, unsigned int *, unsigned int *);
 typedef struct libusb_device_handle * HANDLE;
 
+typedef struct
+{
+	int iBoardVersion; /* board version; 1 byte; range 0 thru 7, at least.*/
+	char cHDMIFwVersion[3]; /* firmware version, 3-byte array */
+	char cHDMIFwDate[4]; /* firmware date; 4 bytes. */
+	char cTouchFwVersion[3]; /* firmware version, 3-byte array */
+	char cTouchFwDate[4]; /* firmware date; 4 bytes. */
+	int iuC_ID; /* Identification of the microcontroller.*/
+	int iFlashSize; /* Size of the microcontroller’s flash memory in bytes.*/
+	int iFlashRes; /* Length of the area inside the flash memory reserved for storage of secure data.*/
+	uint16_t iVID; /* USB Vendor ID.*/
+	uint16_t iPID; /* USB Product ID.*/
+	uint8_t vln; /* lengrh of vendor name */
+	char cVendorName[255]; /* Vendor name */
+	uint8_t pln; /* lengrh of product name */
+	char cProductName[255]; /* Product name */
+	int SerialNumber; /* Serial number of Touch controller */
+	int FirmwareCRC32; /* CRC32 of firmware */
+	char FirmwareHash[32]; /* Hash (SHA-256) of firmware */
+} TM_DEVICEINFO;
+
 typedef struct {
 	_CALLBACKFUNC cb;
 	int completed;
@@ -76,7 +97,6 @@ typedef struct {
 
 } RESPBUFFER;
 
-
 void buffer_hex_dump(unsigned char*, int);
 int usb_sync_transfer_set(unsigned char *, unsigned char *, int, int);
 int usb_sync_transfer_get(unsigned char *, unsigned char *, int, int);
@@ -95,4 +115,7 @@ int TM_SetSpeakerFreq (int);
 int TM_GetSpeakerStatus (int *, int *, int *);
 int TM_EnterPowerSavingMode (void);
 int TM_ExitPowerSavingMode (void);
-
+int TM_SetTpResolution (int, int);
+int TM_GetTpResolution (int *, int *);
+int TM_FirmwareReset (void);
+int TM_Who (TM_DEVICEINFO * pDeviceInfo);
