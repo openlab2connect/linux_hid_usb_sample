@@ -61,7 +61,7 @@ int TM_GetSpeakerStatus (int *iStatus, int *iVolume, int *iFreq)
 	free(cbuf);
 	free(rbuf);
 	return rc;
-	}
+}
 
 int TM_SetSpeakerFreq (int iFreq)
 {
