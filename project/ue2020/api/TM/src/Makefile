@@ -5,7 +5,7 @@ obj = $(src:.c=.o)
 CC= gcc
 alib = libtm.a
 
-CFLAGS = -I../../include -Wall
+CFLAGS = -I../../include -Wall -fPIC
 LIB_DIR = ../../lib
 
 $(alib): $(obj)
