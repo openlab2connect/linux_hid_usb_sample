@@ -36,7 +36,7 @@ int usb_sync_transfer_get(unsigned char *cmd, unsigned char *resp, int bytes, in
 {
 	int rc;
 	int actual_length;
-	uint16_t retcode;
+	uint16_t *retcode;
 	HANDLE hd = g_hd;
 
 	rc = libusb_claim_interface(hd, 0);
@@ -63,8 +63,8 @@ int usb_sync_transfer_get(unsigned char *cmd, unsigned char *resp, int bytes, in
 
 	if (rc == 0 && actual_length == sizeof(RESPBUFFER)) {
 		// RetCode
-		retcode = (resp[4]<<8)|resp[3];
-		fprintf(stderr, "%s:data response success ret %d\n", __func__, retcode);
+		retcode = (uint16_t *)&resp[3];
+		fprintf(stderr, "%s:data response success ret %d\n", __func__, *retcode);
 		if (dump_resp)
 			buffer_hex_dump(resp, RESP_FORMAT_6);
 	} else {
@@ -79,7 +79,7 @@ int usb_sync_transfer_set(unsigned char *cmd, unsigned char *resp, int bytes, in
 {
 	int rc;
 	int actual_length;
-	uint16_t retcode;
+	uint16_t *retcode;
 	HANDLE hd = g_hd;
 
 	rc = libusb_claim_interface(hd, 0);
@@ -105,8 +105,8 @@ int usb_sync_transfer_set(unsigned char *cmd, unsigned char *resp, int bytes, in
 		ENPPOINT_IN, resp, sizeof(RESPBUFFER), &actual_length, 0);
 
 	if (rc == 0 && actual_length == sizeof(RESPBUFFER)) {
-		retcode = (resp[4]<<8)|resp[3];
-		fprintf(stderr, "%s:data response success ret %d\n", __func__, retcode);
+		retcode = (uint16_t *)&resp[3];
+		fprintf(stderr, "%s:data response success ret %d\n", __func__, *retcode);
 		if (dump_resp)
 			buffer_hex_dump(resp, RESP_FORMAT_5);
 	} else {
