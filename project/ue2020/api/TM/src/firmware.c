@@ -34,6 +34,28 @@ For more information, please refer to <http://unlicense.org>
 
 extern HANDLE g_hd;
 
+void static update_dev_firmware_hash(TM_DEVICEINFO *pdev, unsigned char *resp)
+{
+	int *lt32;
+
+	lt32 = (int *)&resp[5];
+	pdev->SerialNumber = *lt32;
+}
+void static update_dev_firmware_crc(TM_DEVICEINFO *pdev, unsigned char *resp)
+{
+	int *lt32;
+
+	lt32 = (int *)&resp[5];
+	pdev->SerialNumber = *lt32;
+}
+void static update_dev_serial(TM_DEVICEINFO *pdev, unsigned char *resp)
+{
+	int *lt32;
+
+	lt32 = (int *)&resp[5];
+	pdev->SerialNumber = *lt32;
+}
+
 void static update_fw_identification(TM_DEVICEINFO *pdev, unsigned char *resp)
 {
 	char *src;
@@ -123,6 +145,39 @@ int TM_Who (TM_DEVICEINFO * pDeviceInfo)
 		fprintf(stderr, "%s: rc %d\n", __func__, rc);
 	else
 		update_fw_identification(pDeviceInfo, rbuf->resp);
+
+	// read serial number
+	cbuf->cmd[0] = 'C';
+	cbuf->cmd[1] = '0';
+	cbuf->cmd[2] = '3';
+
+	rc = usb_sync_transfer_get(cbuf->cmd, rbuf->resp, sizeof(CMDBUFFER)-1, 1);
+	if ( rc < 0)
+		fprintf(stderr, "%s: rc %d\n", __func__, rc);
+	else
+		update_dev_serial(pDeviceInfo, rbuf->resp);
+
+	// read firmware crc
+	cbuf->cmd[0] = 'C';
+	cbuf->cmd[1] = '0';
+	cbuf->cmd[2] = '4';
+
+	rc = usb_sync_transfer_get(cbuf->cmd, rbuf->resp, sizeof(CMDBUFFER)-1, 1);
+	if ( rc < 0)
+		fprintf(stderr, "%s: rc %d\n", __func__, rc);
+	else
+		update_dev_firmware_crc(pDeviceInfo, rbuf->resp);
+
+	// read firmware hash
+	cbuf->cmd[0] = 'C';
+	cbuf->cmd[1] = '0';
+	cbuf->cmd[2] = '5';
+
+	rc = usb_sync_transfer_get(cbuf->cmd, rbuf->resp, sizeof(CMDBUFFER)-1, 1);
+	if ( rc < 0)
+		fprintf(stderr, "%s: rc %d\n", __func__, rc);
+	else
+		update_dev_firmware_hash(pDeviceInfo, rbuf->resp);
 
 	libusb_release_interface(hd, 0);
 	free(cbuf);
