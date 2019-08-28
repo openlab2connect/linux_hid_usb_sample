@@ -66,11 +66,11 @@ typedef struct
 	int iuC_ID; /* Identification of the microcontroller.*/
 	int iFlashSize; /* Size of the microcontroller’s flash memory in bytes.*/
 	int iFlashRes; /* Length of the area inside the flash memory reserved for storage of secure data.*/
-	uint16_t iVID; /* USB Vendor ID.*/
-	uint16_t iPID; /* USB Product ID.*/
-	uint8_t vln; /* lengrh of vendor name */
+	int iVID; /* USB Vendor ID.*/
+	int iPID; /* USB Product ID.*/
+	int vln; /* lengrh of vendor name */
 	char cVendorName[255]; /* Vendor name */
-	uint8_t pln; /* lengrh of product name */
+	int pln; /* lengrh of product name */
 	char cProductName[255]; /* Product name */
 	int SerialNumber; /* Serial number of Touch controller */
 	int FirmwareCRC32; /* CRC32 of firmware */

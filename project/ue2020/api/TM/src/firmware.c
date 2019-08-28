@@ -29,6 +29,7 @@ For more information, please refer to <http://unlicense.org>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <arpa/inet.h>
 #include <tm.h>
 
 extern HANDLE g_hd;
@@ -37,10 +38,17 @@ void static update_fw_identification(TM_DEVICEINFO *pdev, unsigned char *resp)
 {
 	char *src;
 	char *dest;
-	int *integer;
+	int *lt32;
+	uint16_t *lt16;
+	// int i;
 
-	pdev->iBoardVersion = (int)resp[5]; // 1 byte
+	// board version; 1 byte;
+	pdev->iBoardVersion = (int)resp[5];
 
+	// HDMI firmware version, 3-byte array
+	// HDMI firmware date; 4 bytes
+	// MCU firmware version, 3-byte array
+	// MCU firmware date; 4 bytes
 	src = (char	*)&resp[6];
 	dest = pdev->cHDMIFwVersion;
 	memcpy(dest, src,
@@ -49,27 +57,49 @@ void static update_fw_identification(TM_DEVICEINFO *pdev, unsigned char *resp)
 		+ sizeof(pdev->cTouchFwVersion) // 3 bytes
 		+ sizeof(pdev->cTouchFwDate) ); // 4 bytes
 
-	integer = (int *)&resp[20];          // 4 bytes
-	pdev->iuC_ID = *integer;
+	// little-endian 4 bytes
+	// fprintf(stderr, "%s: 0x%x,0x%x,0x%x,0x%x\n",
+	// 	__func__, resp[20], resp[21], resp[22], resp[23]);
 
-	integer = (int *)&resp[24];          // 4 bytes
-	pdev->iFlashSize = *integer;
+	lt32 = (int *)&resp[20];
+	// fprintf(stderr, "%s: 0x%x\n", __func__, *lt32);
+	pdev->iuC_ID = *lt32;
 
-	integer = (int *)&resp[28];          // 4 bytes 
-	pdev->iFlashRes = *integer;
-	
-	pdev->iVID = (uint16_t)((resp[33]<<8)|resp[32]);
-	pdev->iPID = (uint16_t)((resp[35]<<8)|resp[34]);
+	// 4 bytes
+	lt32 = (int *)&resp[24];
+	pdev->iFlashSize = *lt32;
 
-	pdev->vln = resp[36];               // 1 byte vnedor name
-	src = (char *)&resp[37];
+	// 4 bytes
+	lt32 = (int *)&resp[28];
+	pdev->iFlashRes = *lt32;
+
+	// 0x1662,0x7001
+	lt16 = (uint16_t *)&resp[32];
+	pdev->iVID = (int)*lt16;
+	lt16 = (uint16_t *)&resp[34];
+	pdev->iPID = (int)*lt16;
+
+	// vnedor name length 1 byte
+	pdev->vln = resp[36];
+	src = (char *)&resp[36+1];
+
+	// for (i=0; i<pdev->vln; i++)
+	// 	printf("%c", src[i]);
+	// printf("\n");
+
 	dest = pdev->cVendorName;
-	memcpy(dest, src, pdev->vln);       // max 255 bytes
+	memcpy(dest, src, pdev->vln);
 
-	pdev->pln = src[255];               // 1 byte product name
-	src = (char *)&src[256];
+	// product name length 1 byte
+	pdev->pln = src[pdev->vln];
+	src = (char *)&src[pdev->vln+1];
+
+	// for (i=0; i<pdev->pln; i++)
+	// 	printf("%c", src[i]);
+	// printf("\n");
+
 	dest = pdev->cProductName;
-	memcpy(dest, src, pdev->pln);        // max 255 bytes
+	memcpy(dest, src, pdev->pln);
 }
 
 int TM_Who (TM_DEVICEINFO * pDeviceInfo)
