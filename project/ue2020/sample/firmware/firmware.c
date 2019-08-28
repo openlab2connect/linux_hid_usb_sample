@@ -36,6 +36,9 @@ int main(void)
 	HANDLE handle;
 	int data;
 	int error;
+	int i;
+	char *pvname, *ppname;
+	TM_DEVICEINFO dev;
 
 	handle = TM_Open(&error);
 	if ( !handle ) {
@@ -44,7 +47,24 @@ int main(void)
 		return 1;
 	}
 
+	TM_Who(&dev);
+	fprintf(stderr, "ID: %d\n", dev.iuC_ID);
+	fprintf(stderr, "USB: Vid,0x%x Pid,0x%x\n", dev.iVID, dev.iPID);
+
+	fprintf(stderr, "Vendor Name length in bytes %d\n", dev.vln);
+	pvname = (char *)&dev.cVendorName;
+	for (i=0; i<dev.vln; i++)
+		fprintf(stderr, "%c", pvname[i]);
+	fprintf(stderr, "\n");
+
+	fprintf(stderr, "Product Name length in bytes %d\n", dev.pln);
+	ppname = (char *)&dev.cProductName;
+	for (i=0; i<dev.pln; i++)
+		fprintf(stderr, "%c", ppname[i]);
+	fprintf(stderr, "\n");
+
 	TM_FirmwareReset();
+	sleep(3);
 
 exit:
 	TM_Close(handle);
