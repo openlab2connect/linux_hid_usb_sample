@@ -11,8 +11,11 @@ LIB_DIR = ../../lib
 $(alib): $(obj)
 	$(AR) rcs -o $(LIB_DIR)/$@ $^
 
-%.o: %.c
+%.o: %.c dirmake
 	$(CC) $(CFLAGS) -o $@ -c $<
+
+dirmake:
+	@mkdir -p $(LIB_DIR)
 
 .PHONY: clean
 clean:
