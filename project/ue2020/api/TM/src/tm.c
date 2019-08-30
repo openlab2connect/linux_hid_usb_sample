@@ -37,8 +37,13 @@ pthread_mutex_t lock;
 
 void buffer_hex_dump(unsigned char* buf, int size) {
 	int i;
-	for (i = 0; i<size; i++)
-		fprintf(stderr, "%s: buf[%d] 0x%x\n", __func__, i, buf[i]);
+	for (i = 0; i<size; i++) {
+		//fprintf(stderr, "%s: buf[%d] 0x%x\n", __func__, i, buf[i]);
+		fprintf(stderr, "%1x ", buf[i]);
+		if ( ((i+1) >= 8) && ((i+1)%8 == 0) )
+			fprintf(stderr, "\n");
+	}
+	fprintf(stderr, "\n");
 }
 
 static void LIBUSB_CALL cb_in(struct libusb_transfer *transfer)

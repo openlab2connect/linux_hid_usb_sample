@@ -66,7 +66,7 @@ int usb_sync_transfer_get(unsigned char *cmd, unsigned char *resp, int bytes, in
 		retcode = (uint16_t *)&resp[3];
 		fprintf(stderr, "%s:data response success ret %d\n", __func__, *retcode);
 		if (dump_resp)
-			buffer_hex_dump(resp, RESP_FORMAT_6);
+			buffer_hex_dump(resp, RESP_FORMAT_64);
 	} else {
 		fprintf(stderr, "%s:data response error %d", __func__, rc);
 		return TM_FAIL;

@@ -37,7 +37,7 @@ For more information, please refer to <http://unlicense.org>
 #define ENPPOINT_OUT 0x02
 
 #define RESP_FORMAT_5 5
-#define RESP_FORMAT_6 6
+#define RESP_FORMAT_64 64
 
 #define TIMEOUT 15*1000 // milliseconds
 
@@ -50,7 +50,10 @@ enum tm_error {
 	TM_DEVICE_NO_OPEN = -4,
 	TM_INVALID_PARAMETER = -5,
 	TM_INVALID_STATE = -6,
+	TM_INVALID_DATE_TIME = -7,
 	TM_CALLBACK_NOT_ENABLED = -8,
+	TM_INVALID_SIGNATURE = -9,
+	TM_CRC_MISMATCH = -10,
 };
 
 typedef int (*_CALLBACKFUNC)(int *, unsigned int *, unsigned int *, unsigned int *, unsigned int *);
@@ -118,4 +121,5 @@ int TM_ExitPowerSavingMode (void);
 int TM_SetTpResolution (int, int);
 int TM_GetTpResolution (int *, int *);
 int TM_FirmwareReset (void);
-int TM_Who (TM_DEVICEINFO * pDeviceInfo);
+int TM_Who (TM_DEVICEINFO * );
+int TM_FirmwareDownload (char *, char *);
