@@ -36,17 +36,19 @@ extern HANDLE g_hd;
 
 void static update_dev_firmware_hash(TM_DEVICEINFO *pdev, unsigned char *resp)
 {
-	int *lt32;
+	int i;
+	for (i=0; i<32; i++)
+		fprintf(stderr, "0x%1x,", resp[5+i]);
+	fprintf(stderr, "\n");
 
-	lt32 = (int *)&resp[5];
-	pdev->SerialNumber = *lt32;
+	memcpy(pdev->FirmwareHash, (char *)&resp[5], sizeof(char)*32);
 }
 void static update_dev_firmware_crc(TM_DEVICEINFO *pdev, unsigned char *resp)
 {
 	int *lt32;
 
 	lt32 = (int *)&resp[5];
-	pdev->SerialNumber = *lt32;
+	pdev->FirmwareCRC32 = *lt32;
 }
 void static update_dev_serial(TM_DEVICEINFO *pdev, unsigned char *resp)
 {
@@ -62,16 +64,21 @@ void static update_fw_identification(TM_DEVICEINFO *pdev, unsigned char *resp)
 	char *dest;
 	int *lt32;
 	uint16_t *lt16;
-	// int i;
+	int startBytes = 5;
+	unsigned char resp2[64];
+	int actual_length;
+	int i,j;
 
 	// board version; 1 byte;
-	pdev->iBoardVersion = (int)resp[5];
+	pdev->iBoardVersion = (int)resp[startBytes++];
+
+	// total buffer size calculate start from 6.
 
 	// HDMI firmware version, 3-byte array
 	// HDMI firmware date; 4 bytes
 	// MCU firmware version, 3-byte array
 	// MCU firmware date; 4 bytes
-	src = (char	*)&resp[6];
+	src = (char*)&resp[startBytes];
 	dest = pdev->cHDMIFwVersion;
 	memcpy(dest, src,
 		sizeof(pdev->cHDMIFwVersion)    // 3 bytes
@@ -79,49 +86,105 @@ void static update_fw_identification(TM_DEVICEINFO *pdev, unsigned char *resp)
 		+ sizeof(pdev->cTouchFwVersion) // 3 bytes
 		+ sizeof(pdev->cTouchFwDate) ); // 4 bytes
 
+	// 6 +_14
+	startBytes +=
+		sizeof(pdev->cHDMIFwVersion)    // 3 bytes
+		+ sizeof(pdev->cHDMIFwDate)     // 4 bytes
+		+ sizeof(pdev->cTouchFwVersion) // 3 bytes
+		+ sizeof(pdev->cTouchFwDate);   // 4 bytes
+
 	// little-endian 4 bytes
 	// fprintf(stderr, "%s: 0x%x,0x%x,0x%x,0x%x\n",
 	// 	__func__, resp[20], resp[21], resp[22], resp[23]);
 
-	lt32 = (int *)&resp[20];
-	// fprintf(stderr, "%s: 0x%x\n", __func__, *lt32);
+	// 20 + 4
+	lt32 = (int *)&resp[startBytes];
 	pdev->iuC_ID = *lt32;
+	startBytes += 4;
 
+	// 24 + 4
 	// 4 bytes
-	lt32 = (int *)&resp[24];
+	lt32 = (int *)&resp[startBytes];
 	pdev->iFlashSize = *lt32;
+	startBytes += 4;
 
+	// 28 + 4
 	// 4 bytes
-	lt32 = (int *)&resp[28];
+	lt32 = (int *)&resp[startBytes];
 	pdev->iFlashRes = *lt32;
+	startBytes += 4;
 
+	// 32 + 2
 	// 0x1662,0x7001
-	lt16 = (uint16_t *)&resp[32];
+	lt16 = (uint16_t *)&resp[startBytes];
 	pdev->iVID = (int)*lt16;
-	lt16 = (uint16_t *)&resp[34];
+	startBytes += 2;
+
+	// 34 + 2
+	lt16 = (uint16_t *)&resp[startBytes];
 	pdev->iPID = (int)*lt16;
+	startBytes += 2;
 
+	// 36
 	// vnedor name length 1 byte
-	pdev->vln = resp[36];
-	src = (char *)&resp[36+1];
+	pdev->vln = resp[startBytes];
+	// totoal bytes = 36+1
+	// printf("%s:total fixed size bytes:%d\n", __func__, startBytes+1);
 
-	// for (i=0; i<pdev->vln; i++)
-	// 	printf("%c", src[i]);
-	// printf("\n");
+	// over max ep size
+	// total bytes = (start bytes + 1) + lenght of bytes
+	if ((startBytes + 1 + pdev->vln) > 64) {
+		libusb_bulk_transfer(g_hd,
+		ENPPOINT_IN, &resp2[0], sizeof(resp2), &actual_length, 0);
+	}
 
+	// fill vendor name
+	// 36 + 1 point to vendor name
+	j = 0; startBytes++;
+	src = (char *)&resp[startBytes];
 	dest = pdev->cVendorName;
-	memcpy(dest, src, pdev->vln);
+	for (i = 0; i<pdev->vln; i++) {
+		// make sure resp buffer is not over size of 64 bytes
+		// if it does, move to next resp buffer
+		if ((startBytes + 1 + i) > 64)
+			dest[i] = resp2[j++];
+		else
+			dest[i] = src[i];
+	}
 
-	// product name length 1 byte
-	pdev->pln = src[pdev->vln];
-	src = (char *)&src[pdev->vln+1];
+	// 37 + 23
+	// point to proudct length
+	startBytes += pdev->vln;
 
-	// for (i=0; i<pdev->pln; i++)
-	// 	printf("%c", src[i]);
-	// printf("\n");
+	// proudct name lenght 1 byte
+	if ( j != 0 )
+		pdev->pln = resp2[j++];
+	else {
+		pdev->pln = resp[startBytes];
+	}
 
+	// over max ep size
+	// total bytes = (start bytes + 1) + lenght of other bytes
+	if ( j == 0 && (startBytes + 1 + pdev->pln) > 64) {
+		libusb_bulk_transfer(g_hd,
+		ENPPOINT_IN, &resp2[0], sizeof(resp2), &actual_length, 0);
+
+		buffer_hex_dump((unsigned char *)&resp2, RESP_FORMAT_64);
+	}
+
+	// 60 + 1
+	// point to product name
+	startBytes++;
+	src = (char *)&resp[startBytes];
 	dest = pdev->cProductName;
-	memcpy(dest, src, pdev->pln);
+	for (i = 0; i<pdev->pln; i++) {
+		// make sure resp buffer is not over size of 64 bytes
+		// if it does, move to next resp buffer
+		if ((startBytes + 1 + i) > 64)
+			dest[i] = resp2[j++];
+		else
+			dest[i] = src[i];
+	}
 }
 
 int TM_Who (TM_DEVICEINFO * pDeviceInfo)
@@ -191,7 +254,7 @@ int TM_FirmwareReset(void)
 	HANDLE hd = g_hd;
 	CMDBUFFER *cbuf = (CMDBUFFER *)malloc(sizeof(CMDBUFFER));
 	RESPBUFFER *rbuf = (RESPBUFFER *)malloc(sizeof(RESPBUFFER));
-	uint16_t retcode;
+	uint16_t *retcode;
 
 	if (hd == NULL)
 		return TM_DEVICE_NO_OPEN;
@@ -206,13 +269,13 @@ int TM_FirmwareReset(void)
 	if ( rc < 0)
 		fprintf(stderr, "%s: rc %d\n", __func__, rc);
 
-	retcode = (uint16_t)((rbuf->resp[4] << 8)|rbuf->resp[3]);
+	retcode = (uint16_t *)&rbuf->resp[3];
 
 	libusb_release_interface(hd, 0);
 	free(cbuf);
 	free(rbuf);
 
-	if (retcode == 0x0003)
+	if (*retcode == 0x0003)
 		return TM_INVALID_STATE;
 	return rc;
 }

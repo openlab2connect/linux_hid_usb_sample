@@ -40,6 +40,9 @@ int main(void)
 	char *pvname, *ppname;
 	TM_DEVICEINFO dev;
 
+	uint16_t * hdmiFwData;
+	uint16_t * mcuFwData;
+
 	handle = TM_Open(&error);
 	if ( !handle ) {
 		fprintf(stderr, "Error finding USB device\n");
@@ -48,6 +51,13 @@ int main(void)
 	}
 
 	TM_Who(&dev);
+
+	hdmiFwData = (uint16_t *)&dev.cHDMIFwDate[0];
+	fprintf(stderr, "HDMI Fw Date: %d-%d-%d\n", *hdmiFwData, dev.cHDMIFwDate[1], dev.cHDMIFwDate[2]);
+
+	mcuFwData = (uint16_t *)&dev.cTouchFwDate[0];
+	fprintf(stderr, "MCU Fw Date: %d-%d-%d\n", *mcuFwData, dev.cTouchFwDate[1], dev.cTouchFwDate[2]);
+
 	fprintf(stderr, "ID: %d\n", dev.iuC_ID);
 	fprintf(stderr, "USB: Vid,0x%x Pid,0x%x\n", dev.iVID, dev.iPID);
 
@@ -63,8 +73,15 @@ int main(void)
 		fprintf(stderr, "%c", ppname[i]);
 	fprintf(stderr, "\n");
 
-	TM_FirmwareReset();
-	sleep(3);
+	fprintf(stderr, "Serial Number %u\n", dev.SerialNumber);
+	fprintf(stderr, "CRC32 Number %x\n", dev.FirmwareCRC32);
+	for (i=0; i<32; i++)
+		fprintf(stderr, "0x%1x,", (unsigned char)dev.FirmwareHash[i]);
+	fprintf(stderr, "\n");
+
+	// just in case if device needs te be reset
+	// TM_FirmwareReset();
+	// sleep(3);
 
 exit:
 	TM_Close(handle);
