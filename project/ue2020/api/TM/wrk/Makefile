@@ -22,6 +22,7 @@ dirmake:
 .PHONY: clean
 clean:
 	rm -f $(obj) ../../lib/*.so
+	sudo rm /usr/lib/x86_64-linux-gnu/$(slib)
 
 .PHONY: install
 install:
