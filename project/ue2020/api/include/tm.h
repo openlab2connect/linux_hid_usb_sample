@@ -103,7 +103,8 @@ typedef struct {
 void buffer_hex_dump(unsigned char*, int);
 int usb_sync_transfer_set(unsigned char *, unsigned char *, int, int);
 int usb_sync_transfer_get(unsigned char *, unsigned char *, int, int);
-int CallbackTouchPoint(void);
+// int CallbackTouchPoint(void);
+void * CallbackTouchPoint(void *);
 
 HANDLE TM_Open(int *);
 int TM_Close(libusb_device_handle *);

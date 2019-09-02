@@ -88,12 +88,12 @@ static int sync_bulk_write(libusb_device_handle *handle, unsigned char data) {
 	return 0;
 }
 
-void *tm_thread(void *arg)
-{
-	fprintf(stderr, "%s: enter\n", __func__);
-	CallbackTouchPoint();
-	fprintf(stderr, "%s: leave\n", __func__);
-}
+// void *tm_thread(void *arg)
+// {
+// 	fprintf(stderr, "%s: enter\n", __func__);
+// 	CallbackTouchPoint();
+// 	fprintf(stderr, "%s: leave\n", __func__);
+// }
 
 int main(void)
 {
@@ -101,7 +101,7 @@ int main(void)
 	HANDLE handle;
 	int level;
 	int error;
-	pthread_t id;
+	//pthread_t id;
 
 	handle = TM_Open(&error);
 	if ( !handle ) {
@@ -111,12 +111,12 @@ int main(void)
 	}
 
 	TM_EnableCallbackTouchPoint(xfs_cb);
-	rc = pthread_create(&id, NULL, &tm_thread, NULL);
+	//rc = pthread_create(&id, NULL, &tm_thread, NULL);
 
 	sleep(10);
 	TM_DisableCallbackTouchPoint();
 
-	pthread_join(id, NULL);
+	//pthread_join(id, NULL);
 
 exit:
 	TM_Close(handle);

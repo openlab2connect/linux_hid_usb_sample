@@ -106,6 +106,9 @@ int TM_EnableCallbackTouchPoint(_CALLBACKFUNC lpPSFunc)
 	event_cb * callback = &g_callback;
 	callback->cb = lpPSFunc;
 	callback->completed = 0;
+	pthread_t id;
+
+	pthread_create(&id, NULL, &CallbackTouchPoint, NULL);
 
 	if (g_hd == NULL)
 		return TM_DEVICE_NO_OPEN;
@@ -113,7 +116,7 @@ int TM_EnableCallbackTouchPoint(_CALLBACKFUNC lpPSFunc)
 	return TM_SUCCESS;
 }
 
-int CallbackTouchPoint()
+void *CallbackTouchPoint(void *arg)
 {
 	int rc;
 	HANDLE hd = g_hd;
@@ -141,7 +144,7 @@ int CallbackTouchPoint()
 	tsf = libusb_alloc_transfer(0);
 	if (!tsf) {
 		fprintf(stderr, "%s: alloc transfer error\n", __func__);
-		return TM_FAIL;
+		//return TM_FAIL;
 	}
 
 	libusb_fill_bulk_transfer(tsf, hd,
@@ -168,9 +171,9 @@ int CallbackTouchPoint()
 	free(rbuf);
 	//free(callback);
 
-	if (rc == -6)
-		return TM_INVALID_STATE;
-	return TM_SUCCESS;
+	// if (rc == -6)
+	// 	return TM_INVALID_STATE;
+	// return TM_SUCCESS;
 }
 
 int TM_Close(HANDLE hd)
