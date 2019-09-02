@@ -91,7 +91,7 @@ static int sync_bulk_write(libusb_device_handle *handle, unsigned char data) {
 void *tm_thread(void *arg)
 {
 	fprintf(stderr, "%s: enter\n", __func__);
-	TM_EnableCallbackTouchPoint(xfs_cb);
+	CallbackTouchPoint();
 	fprintf(stderr, "%s: leave\n", __func__);
 }
 
@@ -110,6 +110,7 @@ int main(void)
 		return 1;
 	}
 
+	TM_EnableCallbackTouchPoint(xfs_cb);
 	rc = pthread_create(&id, NULL, &tm_thread, NULL);
 
 	sleep(10);

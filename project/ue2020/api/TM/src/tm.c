@@ -32,8 +32,9 @@ For more information, please refer to <http://unlicense.org>
 #include <tm.h>
 
 HANDLE g_hd;
-static int g_completed = 0;
+//static int g_completed = 0;
 pthread_mutex_t lock;
+event_cb g_callback;
 
 void buffer_hex_dump(unsigned char* buf, int size) {
 	int i;
@@ -89,26 +90,43 @@ static void LIBUSB_CALL cb_in(struct libusb_transfer *transfer)
 int TM_DisableCallbackTouchPoint(void)
 {
 	pthread_mutex_lock(&lock);
-	g_completed = 1;
+	// g_completed = 1;
+	g_callback.completed = 1;
 	pthread_mutex_unlock(&lock);
 
-	fprintf(stderr, "%s:completed%d\n", __func__, g_completed);
+	if (g_hd)
+	  libusb_close(g_hd); // This wakes up libusb_handle_events()
+
+	fprintf(stderr, "%s:completed%d\n", __func__, g_callback.completed);
 	return TM_SUCCESS;
 }
 
 int TM_EnableCallbackTouchPoint(_CALLBACKFUNC lpPSFunc)
 {
+	event_cb * callback = &g_callback;
+	callback->cb = lpPSFunc;
+	callback->completed = 0;
+
+	if (g_hd == NULL)
+		return TM_DEVICE_NO_OPEN;
+
+	return TM_SUCCESS;
+}
+
+int CallbackTouchPoint()
+{
 	int rc;
 	HANDLE hd = g_hd;
 	struct libusb_transfer *tsf;
 	RESPBUFFER *rbuf = (RESPBUFFER *)malloc(sizeof(RESPBUFFER));
-	event_cb *callback = malloc(sizeof(event_cb));
+	// event_cb *callback = malloc(sizeof(event_cb));
+	event_cb * callback = &g_callback;
 	int completed;
 
-	if (hd == NULL)
-		return TM_DEVICE_NO_OPEN;
-	if (rbuf == NULL)
-		return TM_INVALID_PARAMETER;
+	// if (hd == NULL)
+	// 	return TM_DEVICE_NO_OPEN;
+	// if (rbuf == NULL)
+	// 	return TM_INVALID_PARAMETER;
 
 	// rc = libusb_claim_interface(hd, 0);
 	// if (rc < 0) {
@@ -116,8 +134,8 @@ int TM_EnableCallbackTouchPoint(_CALLBACKFUNC lpPSFunc)
 	// 	return TM_ERROR_IO;
 	// }
 
-	callback->cb = lpPSFunc;
-	callback->completed = g_completed;
+	//callback->cb = lpPSFunc;
+	//callback->completed = g_completed;
 	
 	// Async IO call
 	tsf = libusb_alloc_transfer(0);
@@ -132,7 +150,7 @@ int TM_EnableCallbackTouchPoint(_CALLBACKFUNC lpPSFunc)
 	// if (rc != 0)
 	// 	fprintf(stderr, "%s: rc %d\n", __func__, rc);
 
-	while (!g_completed) {
+	while (!g_callback.completed) {
 		rc = libusb_submit_transfer(tsf);
 	    if (rc != 0) {
 	    	fprintf(stderr, "%s: rc %d\n", __func__, rc);
@@ -148,7 +166,7 @@ int TM_EnableCallbackTouchPoint(_CALLBACKFUNC lpPSFunc)
 	// libusb_release_interface(hd, 0);
 
 	free(rbuf);
-	free(callback);
+	//free(callback);
 
 	if (rc == -6)
 		return TM_INVALID_STATE;
