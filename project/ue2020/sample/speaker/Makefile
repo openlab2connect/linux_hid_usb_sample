@@ -3,7 +3,7 @@ obj = $(src:.c=.o)
 CC= gcc
 
 CFLAGS = -Wno-unused-function -I../../api/include
-LDFLAGS = -lusb-1.0 ../../api/lib/libtm.a
+LDFLAGS = -lusb-1.0 -ltm
 
 test: $(obj)
 	$(CC) -o $@ $^ $(LDFLAGS)
