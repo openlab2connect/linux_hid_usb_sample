@@ -32,7 +32,7 @@ For more information, please refer to <http://unlicense.org>
 
 #define VENDOR_ID    0x1662
 #define PRODUCT_ID   0x7001
-#define BOOTLOADER_PRODUCT_ID 0x0040
+#define BOOTLOADER_ID 0x0040
 #define ENPPOINT_IN  0x81
 #define ENPPOINT_OUT 0x02
 
@@ -81,6 +81,11 @@ typedef struct
 } TM_DEVICEINFO;
 
 typedef struct {
+	unsigned char fw[25088];
+
+} FWFILE;
+
+typedef struct {
 	_CALLBACKFUNC cb;
 	int completed;
 } event_cb;
@@ -103,6 +108,7 @@ typedef struct {
 void buffer_hex_dump(unsigned char*, int);
 int usb_sync_transfer_set(unsigned char *, unsigned char *, int, int);
 int usb_sync_transfer_get(unsigned char *, unsigned char *, int, int);
+int usb_sync_transfer_set_512(unsigned char *, unsigned char *, uint32_t, int);
 // int CallbackTouchPoint(void);
 void * CallbackTouchPoint(void *);
 
