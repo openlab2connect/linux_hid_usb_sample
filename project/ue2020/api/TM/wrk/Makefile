@@ -9,6 +9,7 @@ slib = libtm.so
 
 CFLAGS = -I../../include -Wall -fPIC -m64
 LIB_DIR = ../../lib
+LINKFILE=/usr/lib/x86_64-linux-gnu/$(slib)
 
 $(slib): $(obj)
 	$(CC) --shared -o $(LIB_DIR)/$@ $^
@@ -22,7 +23,9 @@ dirmake:
 .PHONY: clean
 clean:
 	rm -f $(obj) ../../lib/*.so
+ifneq ("$(wildcard $(LINKFILE))","")
 	sudo rm /usr/lib/x86_64-linux-gnu/$(slib)
+endif
 
 .PHONY: install
 install:
