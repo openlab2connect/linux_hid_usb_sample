@@ -39,69 +39,13 @@ static int xfs_cb(int *iTp, unsigned int *uiX1pos, unsigned int
 	return 0;
 }
 
-static int sync_bulk_read(libusb_device_handle *handle) {
-
-	int rc;
-	int actual_length;
-	int i;
-	uint16_t retcode;
-	RESPBUFFER *rbuf = (RESPBUFFER *)malloc(sizeof(RESPBUFFER));
-
-	fprintf(stderr, "%s: size %ld\n", __func__, sizeof(RESPBUFFER));
-
-	rc = libusb_bulk_transfer(handle, ENPPOINT_IN, rbuf->resp, sizeof(RESPBUFFER), &actual_length, 0);
-    if ( rc == 0 && actual_length == sizeof(RESPBUFFER)) {
-    	for (i=0; i<actual_length; i++)
-    		fprintf(stderr, "%s: hex 0x%x\n", __func__, rbuf->resp[i]);
-    	retcode = (rbuf->resp[3]<<4)|rbuf->resp[4];
-    	fprintf(stderr, "%s: data transfer success ret %d\n", __func__, retcode);
-    } else
-    	fprintf(stderr, "%s: data transfer error %d", __func__, rc);
-
-	if (rbuf)
-		free(rbuf);
-	return 0;
-}
-
-static int sync_bulk_write(libusb_device_handle *handle, unsigned char data) {
-
-	int actual_length;
-	int rc;
-	CMDBUFFER *cbuf = (CMDBUFFER *)malloc(sizeof(CMDBUFFER));
-
-    cbuf->cmd[0] = 'C';
-    cbuf->cmd[1] = '6';
-    cbuf->cmd[2] = '1';
-    cbuf->cmd[3] = data;
-
-    //buffer_checked(cbuf->cmd, sizeof(CMDBUFFER));
-    fprintf(stderr, "%s: size %ld\n", __func__, sizeof(CMDBUFFER));
-
-	rc = libusb_bulk_transfer(handle, ENPPOINT_OUT, cbuf->cmd, sizeof(CMDBUFFER), &actual_length, 0);
-	if (rc == 0 && actual_length == sizeof(CMDBUFFER))
-		fprintf(stderr, "%s: data transfer success\n", __func__);
-	else
-		fprintf(stderr, "%s: data transfer error %d\n", __func__, rc);
-
-	if (cbuf)
-		free(cbuf);
-	return 0;
-}
-
-// void *tm_thread(void *arg)
-// {
-// 	fprintf(stderr, "%s: enter\n", __func__);
-// 	CallbackTouchPoint();
-// 	fprintf(stderr, "%s: leave\n", __func__);
-// }
-
 int main(void)
 {
 	int rc;
 	HANDLE handle;
 	int level;
 	int error;
-	//pthread_t id;
+	int data;
 
 	handle = TM_Open(&error);
 	if ( !handle ) {
@@ -111,13 +55,24 @@ int main(void)
 	}
 
 	TM_EnableCallbackTouchPoint(xfs_cb);
-	//rc = pthread_create(&id, NULL, &tm_thread, NULL);
-
-	sleep(10);
-	TM_DisableCallbackTouchPoint();
-
-	//pthread_join(id, NULL);
-
+	while(1) {
+		TM_SetBioLed(1);
+		TM_GetBioLed(&data);
+		fprintf(stderr, "get data %d\n", data);
+		sleep(2);
+		TM_SetBioLed(0);
+		TM_GetBioLed(&data);
+		fprintf(stderr, "get data %d\n", data);
+		sleep(2);
+		TM_SetBioLed(2);
+		TM_GetBioLed(&data);
+		fprintf(stderr, "get data %d\n", data);
+		sleep(2);
+		TM_SetBioLed(0);
+		TM_GetBioLed(&data);
+		fprintf(stderr, "get data %d\n", data);
+		//TM_DisableCallbackTouchPoint();
+	}
 exit:
 	TM_Close(handle);
 	return 0;
