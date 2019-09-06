@@ -55,7 +55,7 @@ int TM_GetLCDBrightnessLevel(int *level)
 
 	*level = (int)rbuf->resp[5];
 
-	libusb_release_interface(hd, 0);
+	//libusb_release_interface(hd, 0);
 	free(cbuf);
 	free(rbuf);
 	return rc;
@@ -85,7 +85,7 @@ int TM_SetLCDBrightnessLevel(int level)
 	if ( rc < 0)
 		fprintf(stderr, "%s: rc %d\n", __func__, rc);
 
-	libusb_release_interface(hd, 0);
+	//libusb_release_interface(hd, 0);
 	free(cbuf);
 	free(rbuf);
 	return rc;

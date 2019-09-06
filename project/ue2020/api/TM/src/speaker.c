@@ -57,7 +57,7 @@ int TM_GetSpeakerStatus (int *iStatus, int *iVolume, int *iFreq)
 	*iVolume = (int)rbuf->resp[6];
 	*iFreq = (int)((rbuf->resp[8] << 8)|rbuf->resp[7]);
 
-	libusb_release_interface(hd, 0);
+	//libusb_release_interface(hd, 0);
 	free(cbuf);
 	free(rbuf);
 	return rc;
@@ -87,7 +87,7 @@ int TM_SetSpeakerFreq (int iFreq)
 	if ( rc < 0)
 		fprintf(stderr, "%s: rc %d\n", __func__, rc);
 
-	libusb_release_interface(hd, 0);
+	//libusb_release_interface(hd, 0);
 	free(cbuf);
 	free(rbuf);
 	return rc;
@@ -116,7 +116,7 @@ int TM_SetSpeakerVolume (int iVolume)
 	if ( rc < 0)
 		fprintf(stderr, "%s: rc %d\n", __func__, rc);
 
-	libusb_release_interface(hd, 0);
+	//libusb_release_interface(hd, 0);
 	free(cbuf);
 	free(rbuf);
 	return rc;
@@ -143,7 +143,7 @@ int TM_SetSpeakerOnOff (int iSpeaker)
 	if ( rc < 0)
 		fprintf(stderr, "%s: rc %d\n", __func__, rc);
 
-	libusb_release_interface(hd, 0);
+	//libusb_release_interface(hd, 0);
 	free(cbuf);
 	free(rbuf);
 	return rc;

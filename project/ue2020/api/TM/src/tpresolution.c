@@ -56,7 +56,7 @@ int TM_GetTpResolution (int *iXres, int *iYres)
 	*iXres = (int)((rbuf->resp[6] << 8)|rbuf->resp[5]);
 	*iYres = (int)((rbuf->resp[8] << 8)|rbuf->resp[7]);
 
-	libusb_release_interface(hd, 0);
+	//libusb_release_interface(hd, 0);
 	free(cbuf);
 	free(rbuf);
 	return rc;
@@ -86,7 +86,7 @@ int TM_SetTpResolution (int iXres, int iYres)
 	if ( rc < 0)
 		fprintf(stderr, "%s: rc %d\n", __func__, rc);
 
-	libusb_release_interface(hd, 0);
+	//libusb_release_interface(hd, 0);
 	free(cbuf);
 	free(rbuf);
 	return rc;

@@ -134,8 +134,8 @@ void static update_fw_identification(TM_DEVICEINFO *pdev, unsigned char *resp)
 	// over max ep size
 	// total bytes = (start bytes + 1) + lenght of bytes
 	if ((startBytes + 1 + pdev->vln) > 64) {
-		libusb_bulk_transfer(g_hd,
-		ENPPOINT_IN, &resp2[0], sizeof(resp2), &actual_length, 0);
+		// libusb_bulk_transfer(g_hd,
+		// ENPPOINT_IN, &resp2[0], sizeof(resp2), &actual_length, 0);
 	}
 
 	// fill vendor name
@@ -166,8 +166,8 @@ void static update_fw_identification(TM_DEVICEINFO *pdev, unsigned char *resp)
 	// over max ep size
 	// total bytes = (start bytes + 1) + lenght of other bytes
 	if ( j == 0 && (startBytes + 1 + pdev->pln) > 64) {
-		libusb_bulk_transfer(g_hd,
-		ENPPOINT_IN, &resp2[0], sizeof(resp2), &actual_length, 0);
+		// libusb_bulk_transfer(g_hd,
+		// ENPPOINT_IN, &resp2[0], sizeof(resp2), &actual_length, 0);
 
 		buffer_hex_dump((unsigned char *)&resp2, RESP_FORMAT_64);
 	}
@@ -242,7 +242,7 @@ int TM_Who (TM_DEVICEINFO * pDeviceInfo)
 	else
 		update_dev_firmware_hash(pDeviceInfo, rbuf->resp);
 
-	libusb_release_interface(hd, 0);
+	//libusb_release_interface(hd, 0);
 	free(cbuf);
 	free(rbuf);
 	return rc;
@@ -271,7 +271,7 @@ int TM_FirmwareReset(void)
 
 	retcode = (uint16_t *)&rbuf->resp[3];
 
-	libusb_release_interface(hd, 0);
+	//libusb_release_interface(hd, 0);
 	free(cbuf);
 	free(rbuf);
 
