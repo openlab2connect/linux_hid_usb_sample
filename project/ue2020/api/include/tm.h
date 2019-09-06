@@ -88,6 +88,7 @@ typedef struct {
 typedef struct {
 	_CALLBACKFUNC cb;
 	int completed;
+	unsigned char resp[64];
 } event_cb;
 
 typedef struct {
@@ -109,8 +110,10 @@ void buffer_hex_dump(unsigned char*, int);
 int usb_sync_transfer_set(unsigned char *, unsigned char *, int, int);
 int usb_sync_transfer_get(unsigned char *, unsigned char *, int, int);
 int usb_sync_transfer_set_512(unsigned char *, unsigned char *, uint32_t, int);
-// int CallbackTouchPoint(void);
-void * CallbackTouchPoint(void *);
+// used for callback
+void * EPIN_Sync(void *);
+int usb_sync_wake(unsigned char *, int, int);
+int usb_sync_resp(unsigned char *, int);
 
 HANDLE TM_Open(int *);
 int TM_Close(libusb_device_handle *);
