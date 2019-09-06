@@ -112,7 +112,7 @@ int usb_sync_transfer_get(unsigned char *cmd, unsigned char *resp, int bytes, in
 	}
 
 	usleep(200000);
-	memcpy(resp, callback->resp, sizeof(RESPBUFFER));
+	memcpy(resp, callback->resp2, sizeof(RESPBUFFER));
 
 	//EP IN
 	// rc = libusb_bulk_transfer(hd,
@@ -160,7 +160,7 @@ int usb_sync_transfer_set(unsigned char *cmd, unsigned char *resp, int bytes, in
 	}
 
 	usleep(200000);
-	memcpy(resp, callback->resp, sizeof(RESPBUFFER));
+	memcpy(resp, callback->resp2, sizeof(RESPBUFFER));
 
 	//EP IN
 	// rc = libusb_bulk_transfer(hd,

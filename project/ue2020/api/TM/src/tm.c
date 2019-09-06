@@ -29,6 +29,7 @@ For more information, please refer to <http://unlicense.org>
 #include <stdlib.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <string.h>
 #include <tm.h>
 
 HANDLE g_hd;
@@ -136,7 +137,9 @@ void *EPIN_Sync(void *arg)
 			touch_event_callback(callback->resp);
 		}
 		else {
-			buffer_hex_dump(callback->resp, RESP_FORMAT_64);
+			// set/get resp
+			memcpy(callback->resp2, callback->resp, sizeof(RESPBUFFER));
+			buffer_hex_dump(callback->resp2, RESP_FORMAT_64);
 		}
 	}
 

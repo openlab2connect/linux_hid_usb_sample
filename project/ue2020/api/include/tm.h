@@ -89,6 +89,7 @@ typedef struct {
 	_CALLBACKFUNC cb;
 	int completed;
 	unsigned char resp[64];
+	unsigned char resp2[64];
 } event_cb;
 
 typedef struct {
