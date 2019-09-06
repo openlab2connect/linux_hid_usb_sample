@@ -249,6 +249,8 @@ int TM_FirmwareDownload (char *lpszConfigFWFile, char *lpszFWFile)
 	if (retcode != 0x0000)
 		goto done;
 
+	TM_DisableCallbackTouchPoint();
+
 	// now fw jump to bootloader
 	// product id is 0x0040
 	libusb_release_interface(hd, 0);
