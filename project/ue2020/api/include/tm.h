@@ -88,8 +88,10 @@ typedef struct {
 typedef struct {
 	_CALLBACKFUNC cb;
 	int completed;
-	unsigned char resp[64];
-	unsigned char resp2[64];
+	unsigned char resp[64];  // touch event
+	unsigned char resp2[64]; // set/get command
+	unsigned char resp3[64]; // size over 64 bytes
+	int goresp3;             // size over 64 bytes
 } event_cb;
 
 typedef struct {

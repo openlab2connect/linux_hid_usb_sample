@@ -40,7 +40,6 @@ event_cb g_callback;
 void buffer_hex_dump(unsigned char* buf, int size) {
 	int i;
 	for (i = 0; i<size; i++) {
-		//fprintf(stderr, "%s: buf[%d] 0x%x\n", __func__, i, buf[i]);
 		fprintf(stderr, "%1x ", buf[i]);
 		if ( ((i+1) >= 8) && ((i+1)%8 == 0) )
 			fprintf(stderr, "\n");
@@ -122,8 +121,9 @@ static void touch_event_callback(unsigned char * resp)
 void *EPIN_Sync(void *arg)
 {
 	int rc;
-	//RESPBUFFER * rbuf = (RESPBUFFER *)malloc(sizeof(RESPBUFFER));
 	event_cb * callback = &g_callback;
+	unsigned char resp_format[3];
+	int vendor_lenght = 0;
 
 	while ( callback->completed ) {
 		rc = usb_sync_resp(callback->resp, 0);
@@ -132,11 +132,40 @@ void *EPIN_Sync(void *arg)
 		}
 		if ( !callback->completed )
 			break;
-		if (callback->resp[0] == 'T') {
+
+		// copy resp format
+		memcpy(resp_format, callback->resp, sizeof(resp_format));
+
+		//if (callback->resp[0] == 'T') {
+		if (strcmp((const char *)resp_format, "T00") == 0) {
 			// resp are touch points
 			touch_event_callback(callback->resp);
 		}
 		else {
+
+			// check if it's next coming package
+			if (callback->goresp3) {
+				fprintf(stderr, "%s: previous package size over 64 go resp3\n", __func__);
+				callback->goresp3 = 0;
+				memcpy(callback->resp3, callback->resp, sizeof(RESPBUFFER));
+				buffer_hex_dump(callback->resp3, RESP_FORMAT_64);
+				continue;
+			}
+
+			if (strcmp((const char *)resp_format, "R02") == 0) {
+				// if vendor name size over package size 64 bytes
+				if (37 + callback->resp[37-1] > 64) {
+					printf("vln %d\n", callback->resp[36]);
+				}
+
+				vendor_lenght = callback->resp[36];
+				if (37 + vendor_lenght + callback->resp[37 + vendor_lenght] > 64) {
+					fprintf(stderr, "pln %d\n", callback->resp[37 + vendor_lenght]);
+					callback->goresp3 = 1;
+					printf("%s: next coming package go resp3\n", __func__);
+				}
+			}
+
 			// set/get resp
 			memcpy(callback->resp2, callback->resp, sizeof(RESPBUFFER));
 			buffer_hex_dump(callback->resp2, RESP_FORMAT_64);
@@ -144,7 +173,7 @@ void *EPIN_Sync(void *arg)
 	}
 
 	fprintf(stderr, "%s: leave\n", __func__);
-	//free(rbuf);
+	return 0;
 }
 
 int TM_DisableCallbackTouchPoint(void)

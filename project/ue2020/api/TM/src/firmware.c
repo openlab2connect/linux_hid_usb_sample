@@ -33,6 +33,7 @@ For more information, please refer to <http://unlicense.org>
 #include <tm.h>
 
 extern HANDLE g_hd;
+extern event_cb g_callback;
 
 void static update_dev_firmware_hash(TM_DEVICEINFO *pdev, unsigned char *resp)
 {
@@ -66,8 +67,9 @@ void static update_fw_identification(TM_DEVICEINFO *pdev, unsigned char *resp)
 	uint16_t *lt16;
 	int startBytes = 5;
 	unsigned char resp2[64];
-	int actual_length;
+	//int actual_length;
 	int i,j;
+	event_cb * callback = &g_callback;
 
 	// board version; 1 byte;
 	pdev->iBoardVersion = (int)resp[startBytes++];
@@ -136,6 +138,7 @@ void static update_fw_identification(TM_DEVICEINFO *pdev, unsigned char *resp)
 	if ((startBytes + 1 + pdev->vln) > 64) {
 		// libusb_bulk_transfer(g_hd,
 		// ENPPOINT_IN, &resp2[0], sizeof(resp2), &actual_length, 0);
+		memcpy(&resp2[0], callback->resp3, sizeof(resp2));
 	}
 
 	// fill vendor name
@@ -168,8 +171,7 @@ void static update_fw_identification(TM_DEVICEINFO *pdev, unsigned char *resp)
 	if ( j == 0 && (startBytes + 1 + pdev->pln) > 64) {
 		// libusb_bulk_transfer(g_hd,
 		// ENPPOINT_IN, &resp2[0], sizeof(resp2), &actual_length, 0);
-
-		buffer_hex_dump((unsigned char *)&resp2, RESP_FORMAT_64);
+		memcpy(&resp2[0], callback->resp3, sizeof(resp2));
 	}
 
 	// 60 + 1
