@@ -40,7 +40,7 @@ int main(void)
 	FILE * fp; 
 	FILE * ffw;
 	fp = fopen("./configfw.conf", "r");
-	ffw = fopen("./M41_20190827.bin", "rb"); // open file for binary
+	ffw = fopen("./M41_20190909.bin", "rb"); // open file for binary
     if (fp == NULL || ffw == NULL)
         goto exit;
 
