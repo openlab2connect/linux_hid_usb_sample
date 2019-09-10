@@ -232,3 +232,44 @@ int usb_sync_transfer_set_512(unsigned char * buffer, unsigned char * resp,
 
 	return rc;
 }
+
+int usb_sync_transfer_set_direct(unsigned char *cmd, unsigned char *resp, int bytes, int dump_resp)
+{
+	int rc;
+	int actual_length;
+	uint16_t *retcode;
+	HANDLE hd = g_hd;
+
+	rc = libusb_claim_interface(hd, 0);
+	if (rc < 0) {
+		fprintf(stderr, "%s:interface claim error %d\n", __func__, rc);
+		return TM_ERROR_IO;
+	}
+
+    //EP OUT
+	rc = libusb_bulk_transfer(hd,
+		ENPPOINT_OUT, cmd, bytes, &actual_length, 0);
+
+	if (rc == 0 && actual_length == bytes) {
+		fprintf(stderr, "%s:data transfer success in bytes %d\n", __func__, actual_length);
+	}
+	else {
+		fprintf(stderr, "%s:data transfer error %d\n", __func__, rc);
+		return TM_FAIL;
+	}
+
+	//EP IN
+	rc = libusb_bulk_transfer(hd,
+		ENPPOINT_IN, resp, sizeof(RESPBUFFER), &actual_length, 0);
+
+	if (rc == 0 && actual_length == sizeof(RESPBUFFER)) {
+		retcode = (uint16_t *)&resp[3];
+		fprintf(stderr, "%s:data response success ret %d\n", __func__, *retcode);
+		if (dump_resp)
+			buffer_hex_dump(resp, RESP_FORMAT_5);
+	} else {
+		fprintf(stderr, "%s:data response error %d", __func__, rc);
+		return TM_FAIL;
+	}
+	return TM_SUCCESS;
+}

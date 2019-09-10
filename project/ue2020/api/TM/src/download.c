@@ -129,6 +129,32 @@ unsigned int CalFWCRC32(FILE *ffw)
 
 // }
 
+int DownloadFinish(unsigned int checksum,  unsigned char * resp) {
+	unsigned char cmd[3+4+256];
+	int rc = 0;
+	uint16_t * retcode;
+
+	// download finish send command with
+	// fw crc32 and signature
+	// signature can be any number
+	memset(cmd, 0x12, sizeof(cmd));
+	cmd[0] = 'C';
+	cmd[1] = '4';
+	cmd[2] = '8';
+	cmd[3] = (unsigned char)(checksum & 0xff);
+	cmd[4] = (unsigned char)((checksum & 0xff00) >> 8);
+	cmd[5] = (unsigned char)((checksum & 0xff0000) >> 16);
+	cmd[6] = (unsigned char)((checksum & 0xff000000) >> 24);
+
+	rc = usb_sync_transfer_set_direct(cmd, resp, sizeof(cmd), 1);
+	if (rc < 0) {
+		retcode = (uint16_t *)&resp[3];
+		return *retcode;
+	}
+
+	return rc;
+}
+
 uint16_t DownloadFirmware(FILE * ffw, unsigned char * resp)
 {
 	int rc = 0;
@@ -136,20 +162,24 @@ uint16_t DownloadFirmware(FILE * ffw, unsigned char * resp)
 	size_t count = 0;
 	uint32_t address = 0;
 	unsigned int checksum;
-	unsigned int * crc32;
 	uint16_t * retcode;
+	int fw_size;
 
-	FWFILE *ffile = (FWFILE *)malloc(sizeof(FWFILE));
-	unsigned char cmd[3+4+256];
+	fseek(ffw, 0L, SEEK_END);
+	fw_size = ftell(ffw);
+	rewind(ffw);
+	unsigned char * ffile = malloc(sizeof(unsigned char)*fw_size);
 
-	// 25088 bytes the fw file length 
-	count = fread(ffile->fw, sizeof(unsigned char), sizeof(FWFILE), ffw);
-	// Caculate fw CRC32 
-	checksum = ccrc32(ffile->fw, sizeof(FWFILE));
+	// fw read length
+	count = fread(ffile, sizeof(unsigned char), sizeof(unsigned char)*fw_size, ffw);
+	fprintf(stderr, "%s: fw_size %d file count %lu\n", __func__, fw_size, count);
+
+	// fw CRC32
+	checksum = ccrc32(ffile, sizeof(unsigned char)*fw_size);
 	fprintf(stderr, "%s:checksum 0x%x\n", __func__, checksum);
 
 	while (address < count) {
-		rc = usb_sync_transfer_set_512(&ffile->fw[address], resp, address, 1);
+		rc = usb_sync_transfer_set_512(&ffile[address], resp, address, 1);
 		
 		if (rc < 0) {
 			fprintf(stderr, "%s:rc %d\n", __func__, rc);
@@ -158,7 +188,7 @@ uint16_t DownloadFirmware(FILE * ffw, unsigned char * resp)
 
 		// dump file block 512 bytes with address
 		for (i=0; i<512; i++) {
-			fprintf(stderr, "%x ", ffile->fw[address + i]);
+			fprintf(stderr, "%x ", ffile[address + i]);
 			if ( ((i+1) >= 16) && ((i+1)%16 == 0) )
 				fprintf(stderr, "\n");
 		}
@@ -173,24 +203,11 @@ uint16_t DownloadFirmware(FILE * ffw, unsigned char * resp)
 		retcode = (uint16_t *)&resp[3];
 		return *retcode;
 	}
+
 	free(ffile);
 
-	// download finish send command with 
-	// fw crc32 and signature 
-	// signature can be any number
-	memset(cmd, 0x12, sizeof(cmd));
-	cmd[0] = 'C';
-	cmd[1] = '4';
-	cmd[2] = '8';
-
-	crc32 = (unsigned int *)&cmd[3];
-	*crc32 =  checksum;
-
-	rc = usb_sync_transfer_set(cmd, resp, sizeof(cmd), 1);
-	if (rc < 0) {
-		retcode = (uint16_t *)&resp[3];
-		return *retcode;
-	}
+	// download finish
+	DownloadFinish(checksum, resp);
 
 	return 0;
 }
@@ -250,6 +267,7 @@ int TM_FirmwareDownload (char *lpszConfigFWFile, char *lpszFWFile)
 		goto done;
 
 	TM_DisableCallbackTouchPoint();
+	sleep(1);
 
 	// now fw jump to bootloader
 	// product id is 0x0040
@@ -266,7 +284,8 @@ int TM_FirmwareDownload (char *lpszConfigFWFile, char *lpszFWFile)
 	if (retcode != 0x0000)
 		goto done;
 
-	libusb_release_interface(hd, 0);
+	//libusb_release_interface(hd, 0);
+	sleep(1);
 
 done:
 	free(cbuf);

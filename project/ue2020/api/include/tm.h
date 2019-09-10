@@ -119,6 +119,7 @@ int usb_sync_transfer_set_512(unsigned char *, unsigned char *, uint32_t, int);
 void * EPIN_Sync(void *);
 int usb_sync_wake(unsigned char *, int, int);
 int usb_sync_resp(unsigned char *, int);
+int usb_sync_transfer_set_direct(unsigned char *, unsigned char *, int, int);
 
 HANDLE TM_Open(int *);
 int TM_Close(libusb_device_handle *);
