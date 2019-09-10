@@ -88,10 +88,12 @@ typedef struct {
 typedef struct {
 	_CALLBACKFUNC cb;
 	int completed;
-	unsigned char resp[64];  // touch event
-	unsigned char resp2[64]; // set/get command
-	unsigned char resp3[64]; // size over 64 bytes
-	int goresp3;             // size over 64 bytes
+	unsigned char resp[64];  // touch event responnse
+	unsigned char resp2[64]; // set/get responnse
+	unsigned char resp3[64]; // response are large than 64 bytes
+	unsigned char resp4[64]; // response are large than 128 bytes
+	int package64;           // package size large than 64 bytes
+	int package128;          // package size large than 128 bytes
 } event_cb;
 
 typedef struct {
@@ -137,3 +139,8 @@ int TM_GetTpResolution (int *, int *);
 int TM_FirmwareReset (void);
 int TM_Who (TM_DEVICEINFO * );
 int TM_FirmwareDownload (char *, char *);
+int TM_SetSerialNumber (unsigned int iSerialNumber);
+int TM_SetManufactureData (int iNumBytes, char * cManufactureData);
+int TM_GetManufactureData (char * cManufactureData);
+int TM_CleanManufactureData (void);
+int TM_GetTouchFirmwareAuthenticationCode (char *, char *);

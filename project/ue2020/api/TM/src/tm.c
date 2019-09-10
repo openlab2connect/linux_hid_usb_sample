@@ -142,13 +142,19 @@ void *EPIN_Sync(void *arg)
 			touch_event_callback(callback->resp);
 		}
 		else {
-
-			// check if it's next coming package
-			if (callback->goresp3) {
-				fprintf(stderr, "%s: previous package size over 64 go resp3\n", __func__);
-				callback->goresp3 = 0;
+			if (callback->package64) {
+				fprintf(stderr, "%s: previous package size over 64\n", __func__);
+				callback->package64 = 0;
 				memcpy(callback->resp3, callback->resp, sizeof(RESPBUFFER));
 				buffer_hex_dump(callback->resp3, RESP_FORMAT_64);
+				continue;
+			}
+
+			if (callback->package128) {
+				fprintf(stderr, "%s: previous package size over 128\n", __func__);
+				callback->package128 = 0;
+				memcpy(callback->resp4, callback->resp, sizeof(RESPBUFFER));
+				buffer_hex_dump(callback->resp4, RESP_FORMAT_64);
 				continue;
 			}
 
@@ -161,9 +167,13 @@ void *EPIN_Sync(void *arg)
 				vendor_lenght = callback->resp[36];
 				if (37 + vendor_lenght + callback->resp[37 + vendor_lenght] > 64) {
 					fprintf(stderr, "pln %d\n", callback->resp[37 + vendor_lenght]);
-					callback->goresp3 = 1;
-					printf("%s: next coming package go resp3\n", __func__);
+					callback->package64 = 1;
+					printf("%s: next coming package size large than 64\n", __func__);
 				}
+			}
+			else if (strcmp((const char *)resp_format, "R10") == 0) {
+				callback->package64 = 1;
+				callback->package128 = 1;
 			}
 
 			// set/get resp
