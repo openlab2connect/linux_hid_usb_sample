@@ -28,6 +28,7 @@ For more information, please refer to <http://unlicense.org>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 #include <tm.h>
 
 int main(void)
@@ -43,12 +44,23 @@ int main(void)
 	uint16_t * hdmiFwData;
 	uint16_t * mcuFwData;
 
+	int serial_no = 12345;
+	char mdata[128];
+	int count = 0;
+	char mdata2[32];
+
 	handle = TM_Open(&error);
 	if ( !handle ) {
 		fprintf(stderr, "Error finding USB device\n");
 		libusb_exit(NULL);
 		return 1;
 	}
+
+	// Clean exist manufacture data
+	TM_CleanManufactureData();
+	sleep(2);
+
+	TM_SetSerialNumber(serial_no);
 
 	TM_Who(&dev);
 
@@ -82,6 +94,29 @@ int main(void)
 	// just in case if device needs te be reset
 	// TM_FirmwareReset();
 	// sleep(3);
+
+	fprintf(stderr, "sent manufacture data\n");
+	for (count = 0; count < 64; count++)
+		memset(&mdata[count], count, sizeof(char));
+	for (count; count < 128; count++)
+		memset(&mdata[count], count, sizeof(char));
+
+	TM_SetManufactureData(128, (char *)&mdata);
+
+	memset(&mdata[0], 0x0, sizeof(mdata));
+	TM_GetManufactureData((char *)&mdata);
+	for (count =0; count<128; count++) {
+		fprintf(stderr, "%1x ", mdata[count]);
+		if ( ((count+1) >= 8) && ((count+1)%8 == 0) )
+			fprintf(stderr, "\n");
+	}
+
+	TM_GetTouchFirmwareAuthenticationCode(mdata, mdata2);
+	for (count =0; count<32; count++) {
+		fprintf(stderr, "%x ", (unsigned char)mdata2[count]);
+		if ( ((count+1) >= 8) && ((count+1)%8 == 0) )
+			fprintf(stderr, "\n");
+	}
 
 exit:
 	TM_Close(handle);
