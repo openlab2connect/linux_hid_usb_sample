@@ -281,3 +281,166 @@ int TM_FirmwareReset(void)
 		return TM_INVALID_STATE;
 	return rc;
 }
+
+int TM_SetSerialNumber (unsigned int iSerialNumber)
+{
+	int rc = TM_SUCCESS;
+	HANDLE hd = g_hd;
+	unsigned char cmd[7];
+	RESPBUFFER *rbuf = (RESPBUFFER *)malloc(sizeof(RESPBUFFER));
+	uint16_t *retcode;
+
+	if (hd == NULL)
+		return TM_DEVICE_NO_OPEN;
+	if (rbuf == NULL)
+		return TM_FAIL;
+
+	cmd[0] = 'C';
+	cmd[1] = '0';
+	cmd[2] = '8';
+	cmd[3] = (unsigned char )(iSerialNumber & 0xff);
+	cmd[4] = (unsigned char )((iSerialNumber & 0xff00) >> 8);
+	cmd[5] = (unsigned char )((iSerialNumber & 0xff0000) >> 16);
+	cmd[6] = (unsigned char )((iSerialNumber & 0xff000000) >> 24);
+
+	rc = usb_sync_transfer_set(cmd, rbuf->resp, sizeof(cmd), 1);
+	if ( rc < 0)
+		fprintf(stderr, "%s: rc %d\n", __func__, rc);
+
+	retcode = (uint16_t *)&rbuf->resp[3];
+	free(rbuf);
+
+	if (*retcode == 0x0008)
+		return TM_INVALID_STATE;
+	if (*retcode == 0x0009)
+		return TM_INVALID_STATE;
+	return rc;
+
+}
+
+/*
+	The hidden function that only used for clean serial number
+	and manufacture data
+*/
+int TM_CleanManufactureData()
+{
+	int rc = TM_SUCCESS;
+	HANDLE hd = g_hd;
+	unsigned char cmd[3];
+	RESPBUFFER *rbuf = (RESPBUFFER *)malloc(sizeof(RESPBUFFER));
+
+	if (hd == NULL)
+		return TM_DEVICE_NO_OPEN;
+	if (rbuf == NULL)
+		return TM_FAIL;
+
+	cmd[0] = 'C';
+	cmd[1] = '9';
+	cmd[2] = '9';
+
+	rc = usb_sync_transfer_set(cmd, rbuf->resp, sizeof(cmd), 1);
+	if ( rc < 0)
+		fprintf(stderr, "%s: rc %d\n", __func__, rc);
+
+	free(rbuf);
+	return rc;
+}
+
+int TM_SetManufactureData (int iNumBytes, char * cManufactureData)
+{
+	int rc = TM_SUCCESS;
+	HANDLE hd = g_hd;
+	unsigned char cmd[3+128];
+	RESPBUFFER *rbuf = (RESPBUFFER *)malloc(sizeof(RESPBUFFER));
+	uint16_t *retcode;
+
+	if (hd == NULL)
+		return TM_DEVICE_NO_OPEN;
+	if (rbuf == NULL)
+		return TM_FAIL;
+
+	cmd[0] = 'C';
+	cmd[1] = '0';
+	cmd[2] = '9';
+
+	memcpy(&cmd[3], cManufactureData, sizeof(unsigned char)*128);
+	rc = usb_sync_transfer_set(cmd, rbuf->resp, sizeof(cmd), 1);
+	if ( rc < 0)
+		fprintf(stderr, "%s: rc %d\n", __func__, rc);
+
+	retcode = (uint16_t *)&rbuf->resp[3];
+	free(rbuf);
+
+	if (*retcode == 0x0001)
+		return TM_INVALID_PARAMETER;
+	if (*retcode == 0x0008)
+		return TM_FAIL;
+	return rc;
+}
+
+int TM_GetManufactureData (char * cManufactureData)
+{
+	int rc = TM_SUCCESS;
+	HANDLE hd = g_hd;
+	unsigned char cmd[3];
+	RESPBUFFER *rbuf = (RESPBUFFER *)malloc(sizeof(RESPBUFFER));
+	uint16_t *retcode;
+	event_cb * callback = &g_callback;
+
+	if (hd == NULL)
+		return TM_DEVICE_NO_OPEN;
+	if (rbuf == NULL)
+		return TM_FAIL;
+
+	cmd[0] = 'C';
+	cmd[1] = '1';
+	cmd[2] = '0';
+
+	rc = usb_sync_transfer_set(cmd, rbuf->resp, sizeof(cmd), 1);
+	if ( rc < 0)
+		fprintf(stderr, "%s: rc %d\n", __func__, rc);
+
+	// Total resp size large than 128 bytes
+	memcpy(cManufactureData, &callback->resp2[5], sizeof(char)*64-5);
+	memcpy(&cManufactureData[59], callback->resp3, sizeof(char)*64);
+	memcpy(&cManufactureData[59+64], callback->resp4, sizeof(char)*5);
+
+	retcode = (uint16_t *)&rbuf->resp[3];
+	free(rbuf);
+
+	if (*retcode == 0x0008)
+		return TM_FAIL;
+	return rc;
+}
+
+int TM_GetTouchFirmwareAuthenticationCode (char * cHMACKey, char * cHMAC)
+{
+	int rc = TM_SUCCESS;
+	HANDLE hd = g_hd;
+	unsigned char cmd[3+32];
+	RESPBUFFER *rbuf = (RESPBUFFER *)malloc(sizeof(RESPBUFFER));
+	uint16_t *retcode;
+
+	if (hd == NULL)
+		return TM_DEVICE_NO_OPEN;
+	if (rbuf == NULL)
+		return TM_FAIL;
+
+	cmd[0] = 'C';
+	cmd[1] = '0';
+	cmd[2] = '6';
+	memcpy(&cmd[3], cHMACKey, sizeof(unsigned char)*32);
+
+	rc = usb_sync_transfer_set(cmd, rbuf->resp, sizeof(cmd), 1);
+	if ( rc < 0)
+		fprintf(stderr, "%s: rc %d\n", __func__, rc);
+
+	memcpy(cHMAC, (char *)&rbuf->resp[5], sizeof(unsigned char)*32);
+	retcode = (uint16_t *)&rbuf->resp[3];
+
+	free(rbuf);
+
+	if (*retcode == 0x0001)
+		return TM_INVALID_PARAMETER;
+	return rc;
+}
