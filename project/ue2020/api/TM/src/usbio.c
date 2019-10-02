@@ -111,7 +111,7 @@ int usb_sync_transfer_get(unsigned char *cmd, unsigned char *resp, int bytes, in
 		return TM_FAIL;
 	}
 
-	usleep(200000);
+	usleep(350000);
 	if (callback->resp3)
 		memcpy(resp, callback->resp3, sizeof(RESPBUFFER));
 	memcpy(resp, callback->resp2, sizeof(RESPBUFFER));
@@ -161,7 +161,7 @@ int usb_sync_transfer_set(unsigned char *cmd, unsigned char *resp, int bytes, in
 		return TM_FAIL;
 	}
 
-	usleep(200000);
+	usleep(350000);
 	memcpy(resp, callback->resp2, sizeof(RESPBUFFER));
 
 	//EP IN
